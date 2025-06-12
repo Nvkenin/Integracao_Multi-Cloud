@@ -1,7 +1,5 @@
 #  VPN Site-to-Site entre Azure e AWS (GUI)
 
-##  Autor: Raul
-
 ---
 
 ##  Objetivo
