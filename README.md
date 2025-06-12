@@ -97,17 +97,6 @@ README.md
 
 ---
 
-## Etapa 6: Documentação para GitHub
-
-Crie um README.md com:
-
-- Descrição do projeto
-- Passo a passo
-- Diagrama e evidências
-- Créditos
-
----
-
 ## Conclusão
 
 Com este ambiente, é possível conectar redes privadas Azure e AWS de forma segura, sem exposição pública, e usando Linux como ponto de gestão e testes.
