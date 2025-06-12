@@ -170,10 +170,10 @@ ssh ec2-user@10.1.0.4
 
 Observações Finais
 
-    - Nenhum recurso usa IP público nas VMs
+- Nenhum recurso usa IP público nas VMs
 
-    - Comunicação 100% privada via túnel VPN IPSec
+- Comunicação 100% privada via túnel VPN IPSec
 
-    - O Linux serve como estação de testes e gerenciamento — sem Bastion
+- O Linux serve como estação de testes e gerenciamento — sem Bastion
 
-    - Projeto ideal para arquitetura segura entre nuvens
+- Projeto ideal para arquitetura segura entre nuvens
