@@ -1,15 +1,13 @@
-# 🌐 VPN Site-to-Site entre Azure e AWS (GUI)
-
-## 🧑‍💻 Autor: Raul
+#  VPN Site-to-Site entre Azure e AWS (GUI)
 
 ---
 
-## 🎯 Objetivo
+##  Objetivo
 Criar uma VPN Site-to-Site entre Microsoft Azure e Amazon Web Services (AWS), permitindo a comunicação entre VMs nas duas nuvens usando apenas IPs privados.
 
 ---
 
-## 🟦 Azure (Portal)
+##  Azure (Portal)
 
 ### 1. Criar Resource Group
 - Acesse: [https://portal.azure.com](https://portal.azure.com)
@@ -85,7 +83,7 @@ Criar uma VPN Site-to-Site entre Microsoft Azure e Amazon Web Services (AWS), pe
 
 ---
 
-## 🟨 AWS (Console)
+##  AWS (Console)
 
 ### 1. Criar VPC
 - Console: [https://console.aws.amazon.com/vpc](https://console.aws.amazon.com/vpc)
@@ -156,16 +154,19 @@ Criar uma VPN Site-to-Site entre Microsoft Azure e Amazon Web Services (AWS), pe
 
 ---
 
-## ✅ Testes de Conectividade
+##  Testes de Conectividade
 
 No terminal da VM de cada lado:
 
 ```bash
+
 ping 10.1.0.4      # De AWS para Azure
 ping 10.0.1.4      # De Azure para AWS
 ssh azureuser@10.0.1.4
 ssh ec2-user@10.1.0.4
+
 ```
+
 
 Observações Finais
 
