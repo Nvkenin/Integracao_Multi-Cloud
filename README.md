@@ -1,7 +1,5 @@
 # VPN Site-to-Site entre Azure e AWS
 
-Autor: Seu Nome
-
 ## Objetivo
 
 Estabelecer uma VPN site-to-site entre Azure e AWS que permita comunicação privada entre VMs em sub-redes distintas de cada nuvem.
@@ -12,6 +10,7 @@ Estabelecer uma VPN site-to-site entre Azure e AWS que permita comunicação pri
 
 ### 1.1 Azure VM
 
+```bash
 az vm create \
   --resource-group rg-azure-aws \
   --name vm-azure \
@@ -22,9 +21,11 @@ az vm create \
   --authentication-type ssh \
   --admin-username azureuser \
   --ssh-key-values ~/.ssh/id_rsa.pub
+```
 
 ### 1.2 AWS EC2
 
+```bash
 aws ec2 run-instances \
   --image-id ami-xxxxxxxx \
   --count 1 \
@@ -33,6 +34,7 @@ aws ec2 run-instances \
   --private-ip-address 10.1.0.4 \
   --key-name my-key \
   --security-group-ids sg-xxxxxxxx
+```
 
 ---
 
@@ -65,8 +67,10 @@ aws ec2 run-instances \
 
 Dica: Use a VM Linux de cada lado para acessar, gerenciar e testar a rede por SSH e ping. Não é necessário IP público.
 
+```bash
 sudo apt update
 sudo apt install -y iputils-ping net-tools traceroute
+```
 
 ### Conexão entre VMs
 
@@ -81,6 +85,7 @@ sudo apt install -y iputils-ping net-tools traceroute
 - Diagrama: Criar no draw.io e exportar para PNG + salvar o .drawio
 - Estrutura de diretórios:
 
+```cmd
 /docs
   diagrama.drawio
   diagrama.png
@@ -88,6 +93,7 @@ sudo apt install -y iputils-ping net-tools traceroute
   ping-azure-aws.png
   ssh-test.png
 README.md
+```
 
 ---
 
@@ -107,4 +113,3 @@ Crie um README.md com:
 Com este ambiente, é possível conectar redes privadas Azure e AWS de forma segura, sem exposição pública, e usando Linux como ponto de gestão e testes.
 
 ---
-
