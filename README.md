@@ -1,104 +1,178 @@
-# VPN Site-to-Site entre Azure e AWS
+#  VPN Site-to-Site entre Azure e AWS (GUI)
 
-## Objetivo
-
-Estabelecer uma VPN site-to-site entre Azure e AWS que permita comunicação privada entre VMs em sub-redes distintas de cada nuvem.
+##  Autor: Raul
 
 ---
 
-## Etapa 1: Criar VMs em redes privadas
+##  Objetivo
+Criar uma VPN Site-to-Site entre Microsoft Azure e Amazon Web Services (AWS), permitindo a comunicação entre VMs nas duas nuvens usando apenas IPs privados.
 
-### 1.1 Azure VM
+---
+
+##  Azure (Portal)
+
+### 1. Criar Resource Group
+- Acesse: [https://portal.azure.com](https://portal.azure.com)
+- Pesquise por **Resource Groups > Create**
+- Nome: `rg-azure-aws-raul`
+- Região: mesma da VNet
+
+---
+
+### 2. Criar Virtual Network (VNet)
+- Pesquise: **Virtual Networks > Create**
+- Nome: `vnet-vpn-raul`
+- Endereço CIDR: `10.1.0.0/24`
+- Sub-rede: `sub-priv-raul` — `10.1.0.0/24`
+- Grupo de recurso: `rg-azure-aws-raul`
+
+---
+
+### 3. Criar Gateway Subnet
+- Vá para a VNet > **Subnets > + Gateway Subnet**
+- Nome: `GatewaySubnet`
+- CIDR: `10.1.0.224/27` (reserva para o gateway)
+
+---
+
+### 4. Criar Virtual Network Gateway
+- Pesquise: **Virtual Network Gateway > Create**
+- Nome: `vng-raul`
+- Tipo: **VPN**
+- Gateway type: `Route-based`
+- SKU: `VpnGw1`
+- VNet: `vnet-vpn-raul`
+- IP público: novo IP chamado `ip-vng-raul`
+
+---
+
+### 5. Criar Local Network Gateway (AWS)
+- Pesquise: **Local Network Gateway > Create**
+- Nome: `lng-aws-raul`
+- IP público: (copie do Virtual Private Gateway da AWS)
+- Prefixo de endereço: `10.0.1.0/24`
+
+---
+
+### 6. Criar Conexão VPN com AWS
+- Vá para o `vng-raul`
+- Acesse **Connections > + Add**
+  - Nome: `conn-aws-raul`
+  - Tipo: `Site-to-Site (IPSec)`
+  - Gateway local: `lng-aws-raul`
+  - Shared key: `vpnkey123`
+
+---
+
+### 7. Criar VM de teste (Linux)
+- Pesquise: **Virtual Machines > Create**
+- Nome: `VM-Provider-Raul`
+- SO: Ubuntu Server
+- Rede: `vnet-vpn-raul`, Sub-rede: `sub-priv-raul`
+- IP público: **nenhum**
+- Chave SSH: gerar ou usar existente
+
+---
+
+### 8. Route Table
+- Crie route table para `10.0.1.0/24 → Virtual Network Gateway`
+- Associe à sub-rede privada
+
+---
+
+### 9. NSG (Segurança)
+- Libere **ICMP** e **SSH (porta 22)** da rede `10.0.1.0/24`
+
+---
+
+##  AWS (Console)
+
+### 1. Criar VPC
+- Console: [https://console.aws.amazon.com/vpc](https://console.aws.amazon.com/vpc)
+- VPC Dashboard > **Create VPC**
+  - Nome: `vpc-vpn-raul`
+  - CIDR: `10.0.1.0/24`
+
+---
+
+### 2. Criar Sub-rede
+- Subnets > Create
+  - Nome: `sub-priv-raul`
+  - CIDR: `10.0.1.0/24`
+  - VPC: `vpc-vpn-raul`
+
+---
+
+### 3. Criar Virtual Private Gateway
+- VPC Dashboard > Virtual Private Gateways > Create
+  - Nome: `vpg-raul`
+  - ASN padrão
+- Após criação: clique em **Attach to VPC** → `vpc-vpn-raul`
+
+---
+
+### 4. Criar Customer Gateway (Azure)
+- VPC Dashboard > Customer Gateways > Create
+  - Nome: `cg-azure-raul`
+  - Tipo: Static
+  - IP: (IP público do Azure VPN Gateway)
+  - ASN: `65000` (ou padrão)
+
+---
+
+### 5. Criar VPN Connection
+- VPN Connections > Create
+  - Nome: `vpn-azure-raul`
+  - Gateway: `vpg-raul`
+  - Customer Gateway: `cg-azure-raul`
+  - Routing: Static
+  - Static route: `10.1.0.0/24`
+  - Shared key: `vpnkey123`
+
+---
+
+### 6. Criar EC2 de teste
+- EC2 > Launch Instance
+  - Nome: `EC2-VPN-Raul`
+  - AMI: Ubuntu ou Amazon Linux
+  - VPC: `vpc-vpn-raul`
+  - Subnet: `sub-priv-raul`
+  - IP público: **nenhum**
+  - Chave SSH: usar existente
+
+---
+
+### 7. Route Table
+- Ir à route table da `sub-priv-raul`
+- Adicionar rota para `10.1.0.0/24 → Virtual Private Gateway`
+
+---
+
+### 8. Security Group
+- Libere:
+  - ICMP (ping)
+  - Porta 22 (SSH)
+  - Origem: `10.1.0.0/24`
+
+---
+
+##  Testes de Conectividade
+
+No terminal da VM de cada lado:
 
 ```bash
-az vm create \
-  --resource-group rg-azure-aws \
-  --name vm-azure \
-  --image UbuntuLTS \
-  --vnet-name vnet-azure \
-  --subnet subnet-privada \
-  --private-ip-address 10.0.0.4 \
-  --authentication-type ssh \
-  --admin-username azureuser \
-  --ssh-key-values ~/.ssh/id_rsa.pub
+ping 10.1.0.4      # De AWS para Azure
+ping 10.0.1.4      # De Azure para AWS
+ssh azureuser@10.0.1.4
+ssh ec2-user@10.1.0.4
 ```
 
-### 1.2 AWS EC2
+Observações Finais
 
-```bash
-aws ec2 run-instances \
-  --image-id ami-xxxxxxxx \
-  --count 1 \
-  --instance-type t3.micro \
-  --subnet-id subnet-xxxxxxxx \
-  --private-ip-address 10.1.0.4 \
-  --key-name my-key \
-  --security-group-ids sg-xxxxxxxx
-```
+    - Nenhum recurso usa IP público nas VMs
 
----
+    - Comunicação 100% privada via túnel VPN IPSec
 
-## Etapa 2: Configurar a VPN
+    - O Linux serve como estação de testes e gerenciamento — sem Bastion
 
-### 2.1 Azure
-
-- Criar o Virtual Network Gateway (VPN)
-- Criar o Local Network Gateway com o IP público da AWS
-- Criar a Conexão VPN usando uma shared key
-
-### 2.2 AWS
-
-- Criar o Virtual Private Gateway e associar à VPC
-- Criar o Customer Gateway com IP do Azure Gateway
-- Criar a VPN Connection com a mesma shared key
-- Habilitar rotas estáticas (se necessário)
-
----
-
-## Etapa 3: Configurar rotas e segurança
-
-- Azure: criar rota para 10.1.0.0/24 via Gateway
-- AWS: criar rota para 10.0.0.0/24 via Gateway
-- Security Groups/NSGs: permitir SSH, ICMP entre as sub-redes privadas
-
----
-
-## Etapa 4: Linux como máquina de gerenciamento (sem bastion)
-
-Dica: Use a VM Linux de cada lado para acessar, gerenciar e testar a rede por SSH e ping. Não é necessário IP público.
-
-```bash
-sudo apt update
-sudo apt install -y iputils-ping net-tools traceroute
-```
-
-### Conexão entre VMs
-
-- De Azure: ping 10.1.0.4, ssh ec2-user@10.1.0.4
-- De AWS: ping 10.0.0.4, ssh azureuser@10.0.0.4
-
----
-
-## Etapa 5: Evidências e Diagrama
-
-- Prints: Salvar evidências dos testes de conectividade
-- Diagrama: Criar no draw.io e exportar para PNG + salvar o .drawio
-- Estrutura de diretórios:
-
-```cmd
-/docs
-  diagrama.drawio
-  diagrama.png
-/evidencias
-  ping-azure-aws.png
-  ssh-test.png
-README.md
-```
-
----
-
-## Conclusão
-
-Com este ambiente, é possível conectar redes privadas Azure e AWS de forma segura, sem exposição pública, e usando Linux como ponto de gestão e testes.
-
----
+    - Projeto ideal para arquitetura segura entre nuvens
